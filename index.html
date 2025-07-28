@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Conteúdo - Gemini IA</title>
+    <title>Gerador Multimídia Gemini</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -15,6 +15,8 @@
             --error-text: #dc2626;
             --bg: #f9fafb;
             --copy-bg: #e5e7eb;
+            --music-bg: #f0f9ff;
+            --voice-bg: #f5f3ff;
         }
         
         [data-theme="dark"] {
@@ -24,6 +26,8 @@
             --text: #f9fafb;
             --user-bg: #6366f1;
             --copy-bg: #4b5563;
+            --music-bg: #1e3a8a;
+            --voice-bg: #4c1d95;
         }
         
         * {
@@ -148,6 +152,16 @@
             color: #6b7280;
             font-style: italic;
             animation: blink 1s steps(1) infinite;
+        }
+        
+        .music {
+            background: var(--music-bg);
+            border-left: 4px solid var(--primary);
+        }
+        
+        .voice {
+            background: var(--voice-bg);
+            border-left: 4px solid #8b5cf6;
         }
         
         @keyframes fadeIn {
@@ -298,13 +312,109 @@
             gap: 8px;
         }
         
-        .model-selector {
+        .config-panel {
             margin-top: 20px;
-            padding: 10px;
+            padding: 15px;
             border-radius: 8px;
             background: var(--bot-bg);
-            color: var(--text);
+            width: 100%;
+            max-width: 600px;
+        }
+        
+        .config-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .config-label {
+            font-weight: 500;
+        }
+        
+        .config-select, .config-input {
+            padding: 8px 12px;
+            border-radius: 6px;
             border: 1px solid var(--copy-bg);
+            background: var(--bg);
+            color: var(--text);
+        }
+        
+        .audio-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .audio-control-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        
+        .audio-player {
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .voice-selector {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .voice-option {
+            padding: 8px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--copy-bg);
+            background: var(--bg);
+            cursor: pointer;
+        }
+        
+        .voice-option.selected {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .music-config {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .music-config-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .music-config-label {
+            font-size: 14px;
+        }
+        
+        .music-config-input {
+            width: 60px;
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid var(--copy-bg);
+            background: var(--bg);
+            color: var(--text);
+        }
+        
+        .status-indicator {
+            margin-top: 10px;
+            font-size: 14px;
+            color: var(--primary);
         }
     </style>
 </head>
@@ -312,7 +422,7 @@
     <header>
         <div class="logo">
             <div class="logo-icon">G</div>
-            <h1>Gemini Gerador</h1>
+            <h1>Gemini Multimídia</h1>
         </div>
         <div>
             <button class="header-btn" id="toggleTheme">
@@ -324,10 +434,9 @@
     <main>
         <div id="chatbox">
             <div class="welcome-message">
-                <div class="welcome-title">Bem-vindo ao Gemini Gerador</div>
+                <div class="welcome-title">Gerador de Conteúdo Multimídia</div>
                 <div class="welcome-text">
-                    Sua IA para gerar textos, imagens e vídeos com tecnologia Gemini. 
-                    Digite seu prompt ou use os botões rápidos abaixo.
+                    Crie textos, imagens, vídeos, músicas e vozes com a tecnologia Gemini.
                 </div>
                 
                 <div class="quick-actions">
@@ -340,12 +449,45 @@
                     <button class="quick-action-btn" id="generateVideoBtn">
                         <i class="fas fa-video"></i> Gerar Vídeo
                     </button>
+                    <button class="quick-action-btn" id="generateMusicBtn">
+                        <i class="fas fa-music"></i> Gerar Música
+                    </button>
+                    <button class="quick-action-btn" id="generateVoiceBtn">
+                        <i class="fas fa-microphone"></i> Gerar Voz
+                    </button>
                 </div>
                 
-                <select id="modelSelector" class="model-selector">
-                    <option value="gemini-pro">Gemini Pro (Texto)</option>
-                    <option value="gemini-pro-vision">Gemini Pro Vision (Imagens/Vídeos)</option>
-                </select>
+                <div class="config-panel">
+                    <div class="config-row">
+                        <span class="config-label">Modelo de Texto:</span>
+                        <select id="textModel" class="config-select">
+                            <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                        </select>
+                    </div>
+                    <div class="config-row">
+                        <span class="config-label">Modelo de Imagem:</span>
+                        <select id="imageModel" class="config-select">
+                            <option value="gemini-2.0-flash-preview-image-generation">Gemini 2.0 Flash (Imagens)</option>
+                        </select>
+                    </div>
+                    <div class="config-row">
+                        <span class="config-label">Modelo de Vídeo:</span>
+                        <select id="videoModel" class="config-select">
+                            <option value="veo-3.0-generate-preview">Veo 3.0</option>
+                        </select>
+                    </div>
+                    <div class="config-row">
+                        <span class="config-label">Modelo de Voz:</span>
+                        <select id="voiceModel" class="config-select">
+                            <option value="gemini-2.5-flash-preview-tts">Gemini 2.5 Flash (TTS)</option>
+                        </select>
+                    </div>
+                    <div class="config-row">
+                        <span class="config-label">Temperatura (Criatividade):</span>
+                        <input type="range" id="temperatureSlider" min="0" max="1" step="0.1" value="0.7" class="config-input">
+                        <span id="temperatureValue">0.7</span>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
@@ -361,12 +503,21 @@
 
     <script src="https://www.gstatic.com/genai/1.0.0/genai.js"></script>
     <script>
-        const GeminiGenerator = {
+        const GeminiMultimedia = {
             config: {
-                apiKey: "AIzaSyDnjPx2xoE46bH6FgJHjCQSC_0G-1JXAPQ",
-                model: "gemini-pro",
+                apiKey: "AIzaSyD52-N9K60iE5FW07k5JnSRzEVUa4ix87A",
+                textModel: "gemini-2.5-flash",
+                imageModel: "gemini-2.0-flash-preview-image-generation",
+                videoModel: "veo-3.0-generate-preview",
+                voiceModel: "gemini-2.5-flash-preview-tts",
+                musicModel: "models/lyria-realtime-exp",
+                temperature: 0.7,
                 maxOutputTokens: 2048,
-                temperature: 0.9
+                currentVoice: "pt-BR-Neural2-A",
+                musicBPM: 120,
+                musicTemperature: 1.0,
+                musicSession: null,
+                musicStream: null
             },
             
             init() {
@@ -374,6 +525,7 @@
                 this.setupEventListeners();
                 this.initGemini();
                 this.updateUI();
+                this.setupVoiceOptions();
             },
             
             cacheElements() {
@@ -382,15 +534,25 @@
                     userInput: document.getElementById("userInput"),
                     sendBtn: document.getElementById("sendBtn"),
                     toggleThemeBtn: document.getElementById("toggleTheme"),
-                    modelSelector: document.getElementById("modelSelector"),
+                    textModel: document.getElementById("textModel"),
+                    imageModel: document.getElementById("imageModel"),
+                    videoModel: document.getElementById("videoModel"),
+                    voiceModel: document.getElementById("voiceModel"),
+                    temperatureSlider: document.getElementById("temperatureSlider"),
+                    temperatureValue: document.getElementById("temperatureValue"),
                     generateTextBtn: document.getElementById("generateTextBtn"),
                     generateImageBtn: document.getElementById("generateImageBtn"),
-                    generateVideoBtn: document.getElementById("generateVideoBtn")
+                    generateVideoBtn: document.getElementById("generateVideoBtn"),
+                    generateMusicBtn: document.getElementById("generateMusicBtn"),
+                    generateVoiceBtn: document.getElementById("generateVoiceBtn")
                 };
                 
                 this.typingIndicator = document.createElement("div");
                 this.typingIndicator.className = "message bot typing";
                 this.typingIndicator.textContent = "Gemini está gerando...";
+                
+                this.audioElements = {};
+                this.musicSessions = {};
             },
             
             setupEventListeners() {
@@ -410,8 +572,9 @@
                 
                 this.elements.toggleThemeBtn.addEventListener('click', () => this.toggleTheme());
                 
-                this.elements.modelSelector.addEventListener('change', e => {
-                    this.config.model = e.target.value;
+                this.elements.temperatureSlider.addEventListener('input', (e) => {
+                    this.config.temperature = parseFloat(e.target.value);
+                    this.elements.temperatureValue.textContent = this.config.temperature;
                 });
                 
                 this.elements.generateTextBtn.addEventListener('click', () => {
@@ -428,12 +591,23 @@
                     this.elements.userInput.value = "Por favor, gere um vídeo curto de: ";
                     this.elements.userInput.focus();
                 });
+                
+                this.elements.generateMusicBtn.addEventListener('click', () => {
+                    this.elements.userInput.value = "Por favor, gere uma música no estilo: ";
+                    this.elements.userInput.focus();
+                });
+                
+                this.elements.generateVoiceBtn.addEventListener('click', () => {
+                    this.elements.userInput.value = "Por favor, converta em voz o texto: ";
+                    this.elements.userInput.focus();
+                });
             },
             
             initGemini() {
                 try {
                     this.gemini = new GoogleGenAI({
-                        apiKey: this.config.apiKey
+                        apiKey: this.config.apiKey,
+                        http_options: {'api_version': 'v1alpha'}
                     });
                     console.log("Gemini API initialized");
                 } catch (error) {
@@ -462,6 +636,18 @@
                 this.updateUI();
             },
             
+            setupVoiceOptions() {
+                this.voiceOptions = [
+                    { id: "pt-BR-Neural2-A", name: "Português (Brasil) - Voz A" },
+                    { id: "pt-BR-Neural2-B", name: "Português (Brasil) - Voz B" },
+                    { id: "pt-BR-Neural2-C", name: "Português (Brasil) - Voz C" },
+                    { id: "en-US-Neural2-A", name: "English (US) - Voice A" },
+                    { id: "en-US-Neural2-B", name: "English (US) - Voice B" },
+                    { id: "en-US-Neural2-C", name: "English (US) - Voice C" },
+                    { id: "es-ES-Neural2-A", name: "Español - Voz A" }
+                ];
+            },
+            
             async sendMessage() {
                 const message = this.elements.userInput.value.trim();
                 if (!message) return;
@@ -482,17 +668,22 @@
                     
                     // Verifica o tipo de conteúdo a ser gerado
                     if (message.toLowerCase().includes("gerar imagem") || 
-                        message.toLowerCase().includes("generate image") ||
-                        this.config.model === "gemini-pro-vision" && 
-                        (message.toLowerCase().includes("imagem") || message.toLowerCase().includes("image"))) {
+                        message.toLowerCase().includes("generate image")) {
                         await this.generateImage(message);
                     } 
                     else if (message.toLowerCase().includes("gerar vídeo") || 
-                             message.toLowerCase().includes("generate video") ||
-                             this.config.model === "gemini-pro-vision" && 
-                             (message.toLowerCase().includes("vídeo") || message.toLowerCase().includes("video"))) {
+                             message.toLowerCase().includes("generate video")) {
                         await this.generateVideo(message);
-                    } 
+                    }
+                    else if (message.toLowerCase().includes("gerar música") || 
+                             message.toLowerCase().includes("generate music")) {
+                        await this.generateMusic(message);
+                    }
+                    else if (message.toLowerCase().includes("gerar voz") || 
+                             message.toLowerCase().includes("generate voice") ||
+                             message.toLowerCase().includes("converta em voz")) {
+                        await this.generateVoice(message);
+                    }
                     else {
                         await this.generateText(message);
                     }
@@ -510,7 +701,7 @@
                     }
                     
                     const response = await this.gemini.models.generateContent({
-                        model: "gemini-pro",
+                        model: this.config.textModel,
                         contents: [
                             {
                                 parts: [
@@ -546,7 +737,7 @@
                     const cleanPrompt = prompt.replace(/gerar imagem|generate image/gi, '').trim();
                     
                     const response = await this.gemini.models.generateContent({
-                        model: "gemini-pro-vision",
+                        model: this.config.imageModel,
                         contents: [
                             {
                                 parts: [
@@ -564,7 +755,7 @@
                             <h3>Imagem gerada:</h3>
                             <img src="${imgUrl}" alt="Imagem gerada pelo Gemini">
                             <div class="media-actions">
-                                <button onclick="GeminiGenerator.downloadMedia('${imgUrl}', 'imagem-gemini-${Date.now()}.png')" class="action-btn">
+                                <button onclick="GeminiMultimedia.downloadMedia('${imgUrl}', 'imagem-gemini-${Date.now()}.png')" class="action-btn">
                                     <i class="fas fa-download"></i> Baixar
                                 </button>
                             </div>
@@ -587,7 +778,7 @@
                     const cleanPrompt = prompt.replace(/gerar vídeo|generate video/gi, '').trim();
                     
                     const response = await this.gemini.models.generateContent({
-                        model: "gemini-pro-vision",
+                        model: this.config.videoModel,
                         contents: [
                             {
                                 parts: [
@@ -608,7 +799,7 @@
                                 Seu navegador não suporta o elemento de vídeo.
                             </video>
                             <div class="media-actions">
-                                <button onclick="GeminiGenerator.downloadMedia('${videoUrl}', 'video-gemini-${Date.now()}.mp4')" class="action-btn">
+                                <button onclick="GeminiMultimedia.downloadMedia('${videoUrl}', 'video-gemini-${Date.now()}.mp4')" class="action-btn">
                                     <i class="fas fa-download"></i> Baixar
                                 </button>
                             </div>
@@ -619,6 +810,292 @@
                 } catch (error) {
                     throw error;
                 }
+            },
+            
+            async generateVoice(prompt) {
+                try {
+                    if (!this.gemini) {
+                        throw new Error("API do Gemini não inicializada");
+                    }
+                    
+                    // Limpa o prompt removendo comandos desnecessários
+                    const cleanPrompt = prompt.replace(/gerar voz|generate voice|converta em voz/gi, '').trim();
+                    
+                    const response = await this.gemini.models.generateContent({
+                        model: this.config.voiceModel,
+                        contents: [
+                            {
+                                parts: [
+                                    {text: cleanPrompt}
+                                ]
+                            }
+                        ],
+                        voiceConfig: {
+                            languageCode: this.config.currentVoice.split('-').slice(0, 2).join('-'),
+                            name: this.config.currentVoice
+                        }
+                    });
+                    
+                    this.typingIndicator.remove();
+                    
+                    if (response && response.audio) {
+                        const audioUrl = response.audio;
+                        const audioId = `audio-${Date.now()}`;
+                        
+                        this.addMessage("bot", `<div class="generated-media voice">
+                            <h3>Áudio gerado (${this.getVoiceName(this.config.currentVoice)}):</h3>
+                            <audio id="${audioId}" controls class="audio-player">
+                                <source src="${audioUrl}" type="audio/mpeg">
+                                Seu navegador não suporta o elemento de áudio.
+                            </audio>
+                            <div class="media-actions">
+                                <button onclick="GeminiMultimedia.downloadMedia('${audioUrl}', 'voz-gemini-${Date.now()}.mp3')" class="action-btn">
+                                    <i class="fas fa-download"></i> Baixar
+                                </button>
+                            </div>
+                            <div class="voice-selector">
+                                ${this.voiceOptions.map(voice => `
+                                    <div class="voice-option ${voice.id === this.config.currentVoice ? 'selected' : ''}" 
+                                         onclick="GeminiMultimedia.changeVoice('${voice.id}', '${audioId}')">
+                                        ${voice.name}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>`);
+                        
+                        this.audioElements[audioId] = {
+                            originalUrl: audioUrl,
+                            text: cleanPrompt
+                        };
+                    } else {
+                        throw new Error("Não foi possível gerar o áudio");
+                    }
+                } catch (error) {
+                    throw error;
+                }
+            },
+            
+            async generateMusic(prompt) {
+                try {
+                    if (!this.gemini) {
+                        throw new Error("API do Gemini não inicializada");
+                    }
+                    
+                    // Limpa o prompt removendo comandos desnecessários
+                    const cleanPrompt = prompt.replace(/gerar música|generate music/gi, '').trim();
+                    
+                    this.typingIndicator.remove();
+                    
+                    const musicId = `music-${Date.now()}`;
+                    
+                    this.addMessage("bot", `<div class="generated-media music">
+                        <h3>Preparando música: ${cleanPrompt}</h3>
+                        <div class="music-config">
+                            <div class="music-config-item">
+                                <span class="music-config-label">BPM:</span>
+                                <input type="number" id="${musicId}-bpm" class="music-config-input" 
+                                    value="${this.config.musicBPM}" min="60" max="200"
+                                    onchange="GeminiMultimedia.updateMusicConfig('${musicId}')">
+                            </div>
+                            <div class="music-config-item">
+                                <span class="music-config-label">Temp:</span>
+                                <input type="number" id="${musicId}-temp" class="music-config-input" 
+                                    value="${this.config.musicTemperature}" min="0.1" max="2" step="0.1"
+                                    onchange="GeminiMultimedia.updateMusicConfig('${musicId}')">
+                            </div>
+                        </div>
+                        <div class="audio-controls">
+                            <button onclick="GeminiMultimedia.playMusic('${musicId}')" class="audio-control-btn">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <button onclick="GeminiMultimedia.pauseMusic('${musicId}')" class="audio-control-btn">
+                                <i class="fas fa-pause"></i>
+                            </button>
+                            <button onclick="GeminiMultimedia.stopMusic('${musicId}')" class="audio-control-btn">
+                                <i class="fas fa-stop"></i>
+                            </button>
+                        </div>
+                        <audio id="${musicId}" class="audio-player"></audio>
+                        <div class="status-indicator" id="${musicId}-status">Conectando à sessão de música...</div>
+                    </div>`);
+                    
+                    // Inicia a conexão com a API de música
+                    await this.connectMusicSession(musicId, cleanPrompt);
+                    
+                } catch (error) {
+                    throw error;
+                }
+            },
+            
+            async connectMusicSession(musicId, prompt) {
+                try {
+                    const statusElement = document.getElementById(`${musicId}-status`);
+                    
+                    // Cria uma nova sessão de música
+                    this.musicSessions[musicId] = {
+                        session: await this.gemini.aio.live.music.connect({
+                            model: this.config.musicModel
+                        }),
+                        audioChunks: [],
+                        audioContext: null,
+                        mediaStream: null,
+                        sourceNode: null,
+                        isPlaying: false
+                    };
+                    
+                    const session = this.musicSessions[musicId].session;
+                    
+                    // Configura o recebimento de áudio
+                    session.receive().then(stream => {
+                        const reader = stream.getReader();
+                        
+                        const processAudio = async () => {
+                            const { done, value } = await reader.read();
+                            if (done) return;
+                            
+                            if (value.server_content.audio_chunks && value.server_content.audio_chunks.length > 0) {
+                                const audioData = value.server_content.audio_chunks[0].data;
+                                this.musicSessions[musicId].audioChunks.push(audioData);
+                                
+                                if (this.musicSessions[musicId].isPlaying) {
+                                    this.playAudioChunk(musicId, audioData);
+                                }
+                            }
+                            
+                            processAudio();
+                        };
+                        
+                        processAudio();
+                    });
+                    
+                    // Configura os prompts e parâmetros iniciais
+                    await session.set_weighted_prompts({
+                        prompts: [
+                            {
+                                text: prompt,
+                                weight: 1.0
+                            }
+                        ]
+                    });
+                    
+                    await session.set_music_generation_config({
+                        bpm: this.config.musicBPM,
+                        temperature: this.config.musicTemperature
+                    });
+                    
+                    statusElement.textContent = "Sessão de música conectada. Pronto para tocar!";
+                    
+                } catch (error) {
+                    const statusElement = document.getElementById(`${musicId}-status`);
+                    statusElement.textContent = `Erro na conexão: ${error.message}`;
+                    statusElement.style.color = "var(--error-text)";
+                    console.error("Erro na sessão de música:", error);
+                }
+            },
+            
+            async updateMusicConfig(musicId) {
+                const bpm = parseInt(document.getElementById(`${musicId}-bpm`).value);
+                const temp = parseFloat(document.getElementById(`${musicId}-temp`).value);
+                
+                if (this.musicSessions[musicId] && this.musicSessions[musicId].session) {
+                    try {
+                        await this.musicSessions[musicId].session.set_music_generation_config({
+                            bpm: bpm,
+                            temperature: temp
+                        });
+                        
+                        const statusElement = document.getElementById(`${musicId}-status`);
+                        statusElement.textContent = `Configuração atualizada: BPM=${bpm}, Temp=${temp}`;
+                    } catch (error) {
+                        console.error("Erro ao atualizar configuração:", error);
+                    }
+                }
+            },
+            
+            async playMusic(musicId) {
+                if (!this.musicSessions[musicId]) return;
+                
+                const session = this.musicSessions[musicId].session;
+                const audioElement = document.getElementById(musicId);
+                
+                try {
+                    // Inicia a reprodução dos chunks já recebidos
+                    if (this.musicSessions[musicId].audioChunks.length > 0) {
+                        const audioBlob = new Blob(this.musicSessions[musicId].audioChunks, { type: 'audio/mp3' });
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        audioElement.src = audioUrl;
+                        audioElement.play();
+                    }
+                    
+                    // Inicia o streaming de música
+                    await session.play();
+                    this.musicSessions[musicId].isPlaying = true;
+                    
+                    const statusElement = document.getElementById(`${musicId}-status`);
+                    statusElement.textContent = "Reproduzindo música...";
+                    
+                } catch (error) {
+                    console.error("Erro ao reproduzir música:", error);
+                }
+            },
+            
+            async pauseMusic(musicId) {
+                if (!this.musicSessions[musicId]) return;
+                
+                const audioElement = document.getElementById(musicId);
+                audioElement.pause();
+                this.musicSessions[musicId].isPlaying = false;
+                
+                const statusElement = document.getElementById(`${musicId}-status`);
+                statusElement.textContent = "Música pausada";
+            },
+            
+            async stopMusic(musicId) {
+                if (!this.musicSessions[musicId]) return;
+                
+                const audioElement = document.getElementById(musicId);
+                audioElement.pause();
+                audioElement.currentTime = 0;
+                this.musicSessions[musicId].isPlaying = false;
+                
+                try {
+                    await this.musicSessions[musicId].session.stop();
+                    
+                    const statusElement = document.getElementById(`${musicId}-status`);
+                    statusElement.textContent = "Música parada";
+                } catch (error) {
+                    console.error("Erro ao parar música:", error);
+                }
+            },
+            
+            playAudioChunk(musicId, audioData) {
+                // Implementação para reproduzir chunks de áudio em tempo real
+                // (Esta parte seria mais complexa na prática, envolvendo Web Audio API)
+                console.log("Reproduzindo chunk de áudio:", audioData);
+            },
+            
+            changeVoice(voiceId, audioId) {
+                this.config.currentVoice = voiceId;
+                
+                // Atualiza a UI das opções de voz
+                const voiceOptions = document.querySelectorAll(`#${audioId} ~ .voice-selector .voice-option`);
+                voiceOptions.forEach(option => {
+                    option.classList.remove('selected');
+                    if (option.textContent.includes(this.getVoiceName(voiceId))) {
+                        option.classList.add('selected');
+                    }
+                });
+                
+                // Se já temos um áudio gerado, podemos regenerar com a nova voz
+                if (this.audioElements[audioId]) {
+                    const originalText = this.audioElements[audioId].text;
+                    this.generateVoice(`converta em voz: ${originalText}`);
+                }
+            },
+            
+            getVoiceName(voiceId) {
+                const voice = this.voiceOptions.find(v => v.id === voiceId);
+                return voice ? voice.name : voiceId;
             },
             
             addMessage(role, content, type = null) {
@@ -668,7 +1145,7 @@
 
         // Inicializa quando o DOM estiver pronto
         document.addEventListener('DOMContentLoaded', () => {
-            GeminiGenerator.init();
+            GeminiMultimedia.init();
             
             // Define o tema inicial baseado nas preferências do sistema
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -676,7 +1153,7 @@
                 document.documentElement.setAttribute("data-theme", "dark");
             }
             
-            GeminiGenerator.updateUI();
+            GeminiMultimedia.updateUI();
         });
     </script>
 </body>
