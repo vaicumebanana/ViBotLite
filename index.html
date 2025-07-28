@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Conteúdo - Gemini IA</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --user-bg: #4f46e5;
+            --bot-bg: #f3f4f6;
+            --error-bg: #fee2e2;
+            --text: #111827;
+            --error-text: #dc2626;
+            --bg: #f9fafb;
+            --copy-bg: #e5e7eb;
+        }
+        
+        [data-theme="dark"] {
+            --primary: #6366f1;
+            --bg: #1f2937;
+            --bot-bg: #374151;
+            --text: #f9fafb;
+            --user-bg: #6366f1;
+            --copy-bg: #4b5563;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            transition: background 0.3s, color 0.3s;
+            line-height: 1.6;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: var(--bg);
+            border-bottom: 1px solid var(--copy-bg);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        
+        h1 {
+            margin: 0;
+            color: var(--primary);
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+        
+        .header-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--copy-bg);
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: var(--text);
+        }
+        
+        main {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #chatbox {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .message {
+            padding: 14px 18px;
+            border-radius: 18px;
+            max-width: 90%;
+            line-height: 1.5;
+            animation: fadeIn 0.3s ease-out;
+            word-wrap: break-word;
+            position: relative;
+            font-size: 16px;
+        }
+        
+        .user {
+            background: var(--user-bg);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .bot {
+            background: var(--bot-bg);
+            color: var(--text);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+        
+        .error {
+            background: var(--error-bg);
+            color: var(--error-text);
+            align-self: center;
+            text-align: center;
+            max-width: 95%;
+            padding: 12px;
+        }
+        
+        .typing {
+            color: #6b7280;
+            font-style: italic;
+            animation: blink 1s steps(1) infinite;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes blink {
+            50% {
+                opacity: 0.5;
+            }
+        }
+        
+        #input-area {
+            padding: 10px;
+            background: var(--bg);
+            border-top: 1px solid var(--copy-bg);
+            display: flex;
+            align-items: center;
+        }
+        
+        #input-container {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            max-width: 100%;
+        }
+        
+        #userInput {
+            flex: 1;
+            padding: 14px 18px;
+            border: 1px solid var(--copy-bg);
+            border-radius: 25px;
+            font-size: 16px;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 50px;
+            resize: none;
+            line-height: 1.4;
+        }
+        
+        #sendBtn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        
+        #sendBtn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .action-btn {
+            background: var(--copy-bg);
+            border: none;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text);
+            margin-top: 8px;
+        }
+        
+        .message-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 8px;
+            gap: 8px;
+        }
+        
+        .generated-media {
+            margin-top: 10px;
+        }
+        
+        .generated-media img, .generated-media video {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 8px;
+        }
+        
+        .media-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .welcome-message {
+            text-align: center;
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .welcome-title {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+            font-weight: 700;
+        }
+        
+        .welcome-text {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            color: var(--text);
+            opacity: 0.9;
+            max-width: 600px;
+        }
+        
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .quick-action-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 10px 20px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .model-selector {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 8px;
+            background: var(--bot-bg);
+            color: var(--text);
+            border: 1px solid var(--copy-bg);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <div class="logo-icon">G</div>
+            <h1>Gemini Gerador</h1>
+        </div>
+        <div>
+            <button class="header-btn" id="toggleTheme">
+                <i class="fas fa-moon"></i>
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <div id="chatbox">
+            <div class="welcome-message">
+                <div class="welcome-title">Bem-vindo ao Gemini Gerador</div>
+                <div class="welcome-text">
+                    Sua IA para gerar textos, imagens e vídeos com tecnologia Gemini. 
+                    Digite seu prompt ou use os botões rápidos abaixo.
+                </div>
+                
+                <div class="quick-actions">
+                    <button class="quick-action-btn" id="generateTextBtn">
+                        <i class="fas fa-align-left"></i> Gerar Texto
+                    </button>
+                    <button class="quick-action-btn" id="generateImageBtn">
+                        <i class="fas fa-image"></i> Gerar Imagem
+                    </button>
+                    <button class="quick-action-btn" id="generateVideoBtn">
+                        <i class="fas fa-video"></i> Gerar Vídeo
+                    </button>
+                </div>
+                
+                <select id="modelSelector" class="model-selector">
+                    <option value="gemini-pro">Gemini Pro (Texto)</option>
+                    <option value="gemini-pro-vision">Gemini Pro Vision (Imagens/Vídeos)</option>
+                </select>
+            </div>
+        </div>
+    </main>
+
+    <div id="input-area">
+        <div id="input-container">
+            <textarea id="userInput" placeholder="Digite seu prompt aqui..." autocomplete="off" rows="1"></textarea>
+            <button id="sendBtn">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/genai/1.0.0/genai.js"></script>
+    <script>
+        const GeminiGenerator = {
+            config: {
+                apiKey: "AIzaSyDnjPx2xoE46bH6FgJHjCQSC_0G-1JXAPQ",
+                model: "gemini-pro",
+                maxOutputTokens: 2048,
+                temperature: 0.9
+            },
+            
+            init() {
+                this.cacheElements();
+                this.setupEventListeners();
+                this.initGemini();
+                this.updateUI();
+            },
+            
+            cacheElements() {
+                this.elements = {
+                    chatbox: document.getElementById("chatbox"),
+                    userInput: document.getElementById("userInput"),
+                    sendBtn: document.getElementById("sendBtn"),
+                    toggleThemeBtn: document.getElementById("toggleTheme"),
+                    modelSelector: document.getElementById("modelSelector"),
+                    generateTextBtn: document.getElementById("generateTextBtn"),
+                    generateImageBtn: document.getElementById("generateImageBtn"),
+                    generateVideoBtn: document.getElementById("generateVideoBtn")
+                };
+                
+                this.typingIndicator = document.createElement("div");
+                this.typingIndicator.className = "message bot typing";
+                this.typingIndicator.textContent = "Gemini está gerando...";
+            },
+            
+            setupEventListeners() {
+                this.elements.userInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.sendMessage();
+                    }
+                });
+                
+                this.elements.sendBtn.addEventListener('click', () => this.sendMessage());
+                
+                this.elements.userInput.addEventListener('input', () => {
+                    this.elements.userInput.style.height = 'auto';
+                    this.elements.userInput.style.height = Math.min(this.elements.userInput.scrollHeight, 150) + 'px';
+                });
+                
+                this.elements.toggleThemeBtn.addEventListener('click', () => this.toggleTheme());
+                
+                this.elements.modelSelector.addEventListener('change', e => {
+                    this.config.model = e.target.value;
+                });
+                
+                this.elements.generateTextBtn.addEventListener('click', () => {
+                    this.elements.userInput.value = "Por favor, gere um texto sobre: ";
+                    this.elements.userInput.focus();
+                });
+                
+                this.elements.generateImageBtn.addEventListener('click', () => {
+                    this.elements.userInput.value = "Por favor, gere uma imagem de: ";
+                    this.elements.userInput.focus();
+                });
+                
+                this.elements.generateVideoBtn.addEventListener('click', () => {
+                    this.elements.userInput.value = "Por favor, gere um vídeo curto de: ";
+                    this.elements.userInput.focus();
+                });
+            },
+            
+            initGemini() {
+                try {
+                    this.gemini = new GoogleGenAI({
+                        apiKey: this.config.apiKey
+                    });
+                    console.log("Gemini API initialized");
+                } catch (error) {
+                    console.error("Error initializing Gemini API:", error);
+                    this.addMessage("bot", "⚠️ Erro ao inicializar a API do Gemini. Verifique o console para detalhes.", "error");
+                }
+            },
+            
+            updateUI() {
+                const theme = document.documentElement.getAttribute("data-theme");
+                const icon = this.elements.toggleThemeBtn.querySelector('i');
+                
+                if (theme === "dark") {
+                    icon.classList.remove('fa-moon');
+                    icon.classList.add('fa-sun');
+                } else {
+                    icon.classList.remove('fa-sun');
+                    icon.classList.add('fa-moon');
+                }
+            },
+            
+            toggleTheme() {
+                const currentTheme = document.documentElement.getAttribute("data-theme");
+                const newTheme = currentTheme === "dark" ? "light" : "dark";
+                document.documentElement.setAttribute("data-theme", newTheme);
+                this.updateUI();
+            },
+            
+            async sendMessage() {
+                const message = this.elements.userInput.value.trim();
+                if (!message) return;
+                
+                this.addMessage("user", message);
+                this.elements.userInput.value = "";
+                this.elements.userInput.style.height = 'auto';
+                
+                this.elements.chatbox.appendChild(this.typingIndicator);
+                this.elements.chatbox.scrollTop = this.elements.chatbox.scrollHeight;
+                
+                try {
+                    // Remove a mensagem de boas-vindas se for a primeira interação
+                    const welcomeMessage = document.querySelector('.welcome-message');
+                    if (welcomeMessage) {
+                        welcomeMessage.remove();
+                    }
+                    
+                    // Verifica o tipo de conteúdo a ser gerado
+                    if (message.toLowerCase().includes("gerar imagem") || 
+                        message.toLowerCase().includes("generate image") ||
+                        this.config.model === "gemini-pro-vision" && 
+                        (message.toLowerCase().includes("imagem") || message.toLowerCase().includes("image"))) {
+                        await this.generateImage(message);
+                    } 
+                    else if (message.toLowerCase().includes("gerar vídeo") || 
+                             message.toLowerCase().includes("generate video") ||
+                             this.config.model === "gemini-pro-vision" && 
+                             (message.toLowerCase().includes("vídeo") || message.toLowerCase().includes("video"))) {
+                        await this.generateVideo(message);
+                    } 
+                    else {
+                        await this.generateText(message);
+                    }
+                } catch (error) {
+                    this.typingIndicator.remove();
+                    this.addMessage("bot", `⚠️ Erro: ${error.message}`, "error");
+                    console.error("Erro completo:", error);
+                }
+            },
+            
+            async generateText(prompt) {
+                try {
+                    if (!this.gemini) {
+                        throw new Error("API do Gemini não inicializada");
+                    }
+                    
+                    const response = await this.gemini.models.generateContent({
+                        model: "gemini-pro",
+                        contents: [
+                            {
+                                parts: [
+                                    {text: prompt}
+                                ]
+                            }
+                        ],
+                        generationConfig: {
+                            maxOutputTokens: this.config.maxOutputTokens,
+                            temperature: this.config.temperature
+                        }
+                    });
+                    
+                    this.typingIndicator.remove();
+                    
+                    if (response && response.text) {
+                        this.addMessage("bot", response.text);
+                    } else {
+                        throw new Error("Não foi possível gerar o texto");
+                    }
+                } catch (error) {
+                    throw error;
+                }
+            },
+            
+            async generateImage(prompt) {
+                try {
+                    if (!this.gemini) {
+                        throw new Error("API do Gemini não inicializada");
+                    }
+                    
+                    // Limpa o prompt removendo comandos desnecessários
+                    const cleanPrompt = prompt.replace(/gerar imagem|generate image/gi, '').trim();
+                    
+                    const response = await this.gemini.models.generateContent({
+                        model: "gemini-pro-vision",
+                        contents: [
+                            {
+                                parts: [
+                                    {text: `Gere uma imagem detalhada de: ${cleanPrompt}`}
+                                ]
+                            }
+                        ]
+                    });
+                    
+                    this.typingIndicator.remove();
+                    
+                    if (response && response.image) {
+                        const imgUrl = response.image;
+                        this.addMessage("bot", `<div class="generated-media">
+                            <h3>Imagem gerada:</h3>
+                            <img src="${imgUrl}" alt="Imagem gerada pelo Gemini">
+                            <div class="media-actions">
+                                <button onclick="GeminiGenerator.downloadMedia('${imgUrl}', 'imagem-gemini-${Date.now()}.png')" class="action-btn">
+                                    <i class="fas fa-download"></i> Baixar
+                                </button>
+                            </div>
+                        </div>`);
+                    } else {
+                        throw new Error("Não foi possível gerar a imagem");
+                    }
+                } catch (error) {
+                    throw error;
+                }
+            },
+            
+            async generateVideo(prompt) {
+                try {
+                    if (!this.gemini) {
+                        throw new Error("API do Gemini não inicializada");
+                    }
+                    
+                    // Limpa o prompt removendo comandos desnecessários
+                    const cleanPrompt = prompt.replace(/gerar vídeo|generate video/gi, '').trim();
+                    
+                    const response = await this.gemini.models.generateContent({
+                        model: "gemini-pro-vision",
+                        contents: [
+                            {
+                                parts: [
+                                    {text: `Gere um vídeo curto de: ${cleanPrompt}`}
+                                ]
+                            }
+                        ]
+                    });
+                    
+                    this.typingIndicator.remove();
+                    
+                    if (response && response.video) {
+                        const videoUrl = response.video;
+                        this.addMessage("bot", `<div class="generated-media">
+                            <h3>Vídeo gerado:</h3>
+                            <video controls>
+                                <source src="${videoUrl}" type="video/mp4">
+                                Seu navegador não suporta o elemento de vídeo.
+                            </video>
+                            <div class="media-actions">
+                                <button onclick="GeminiGenerator.downloadMedia('${videoUrl}', 'video-gemini-${Date.now()}.mp4')" class="action-btn">
+                                    <i class="fas fa-download"></i> Baixar
+                                </button>
+                            </div>
+                        </div>`);
+                    } else {
+                        throw new Error("Não foi possível gerar o vídeo");
+                    }
+                } catch (error) {
+                    throw error;
+                }
+            },
+            
+            addMessage(role, content, type = null) {
+                const messageDiv = document.createElement("div");
+                messageDiv.className = `message ${role}`;
+                if (type) messageDiv.classList.add(type);
+                
+                if (typeof content === 'string' && content.startsWith('<')) {
+                    messageDiv.innerHTML = content;
+                } else {
+                    messageDiv.textContent = content;
+                }
+                
+                // Adiciona ações para mensagens de texto
+                if (role === "bot" && type !== "error" && typeof content === 'string' && !content.startsWith('<')) {
+                    const actionsDiv = document.createElement("div");
+                    actionsDiv.className = "message-actions";
+                    
+                    const copyBtn = document.createElement("button");
+                    copyBtn.className = "action-btn";
+                    copyBtn.innerHTML = `<i class="fas fa-copy"></i> Copiar`;
+                    copyBtn.onclick = () => {
+                        navigator.clipboard.writeText(content);
+                        copyBtn.innerHTML = `<i class="fas fa-check"></i> Copiado!`;
+                        setTimeout(() => {
+                            copyBtn.innerHTML = `<i class="fas fa-copy"></i> Copiar`;
+                        }, 2000);
+                    };
+                    
+                    actionsDiv.appendChild(copyBtn);
+                    messageDiv.appendChild(actionsDiv);
+                }
+                
+                this.elements.chatbox.appendChild(messageDiv);
+                this.elements.chatbox.scrollTop = this.elements.chatbox.scrollHeight;
+            },
+            
+            downloadMedia(url, filename) {
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+        };
+
+        // Inicializa quando o DOM estiver pronto
+        document.addEventListener('DOMContentLoaded', () => {
+            GeminiGenerator.init();
+            
+            // Define o tema inicial baseado nas preferências do sistema
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (prefersDark) {
+                document.documentElement.setAttribute("data-theme", "dark");
+            }
+            
+            GeminiGenerator.updateUI();
+        });
+    </script>
+</body>
+</html>
