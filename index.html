@@ -523,9 +523,13 @@
             init() {
                 this.cacheElements();
                 this.setupEventListeners();
-                this.initGemini();
                 this.updateUI();
                 this.setupVoiceOptions();
+                
+                // Inicializa a API mas não bloqueia a UI
+                this.initGemini().catch(error => {
+                    console.error("Falha na inicialização:", error);
+                });
             },
             
             cacheElements() {
@@ -603,17 +607,55 @@
                 });
             },
             
+            checkGeminiScriptLoaded() {
+                return typeof GoogleGenAI !== 'undefined';
+            },
+            
             initGemini() {
-                try {
-                    this.gemini = new GoogleGenAI({
-                        apiKey: this.config.apiKey,
-                        http_options: {'api_version': 'v1alpha'}
-                    });
-                    console.log("Gemini API initialized");
-                } catch (error) {
-                    console.error("Error initializing Gemini API:", error);
-                    this.addMessage("bot", "⚠️ Erro ao inicializar a API do Gemini. Verifique o console para detalhes.", "error");
+                if (!this.checkGeminiScriptLoaded()) {
+                    throw new Error("Biblioteca Gemini não carregada");
                 }
+                
+                const apiKeys = [
+                    "AIzaSyD52-N9K60iE5FW07k5JnSRzEVUa4ix87A", // Chave principal
+                    "AIzaSyC48JTCLnSK6IYE2nVhODh1hce47jPXEGs", // Fallback 1
+                    "AIzaSyB4SzIfoiW3l_ZgIqwRb3yb3UbpzbgmBlM", // Fallback 2
+                    "AIzaSyDic3EifJim-ylepPhm14uQRYItqgb0H7M"  // Fallback 3
+                ];
+                
+                let lastError = null;
+                
+                for (const key of apiKeys) {
+                    try {
+                        this.config.apiKey = key;
+                        this.gemini = new GoogleGenAI({
+                            apiKey: this.config.apiKey,
+                            http_options: {'api_version': 'v1alpha'}
+                        });
+                        console.log("Gemini API inicializada com sucesso usando a chave:", key.slice(0, 10) + "...");
+                        return Promise.resolve(); // Sai do loop se a inicialização for bem-sucedida
+                    } catch (error) {
+                        lastError = error;
+                        console.warn("Falha ao inicializar com a chave:", key.slice(0, 10) + "...", error);
+                        continue; // Tenta a próxima chave
+                    }
+                }
+                
+                // Se todas as chaves falharem
+                console.error("Todas as tentativas de inicialização falharam");
+                this.addMessage("bot", "⚠️ Erro ao inicializar a API do Gemini. Todas as chaves API falharam. Por favor, recarregue a página ou tente novamente mais tarde.", "error");
+                return Promise.reject(lastError);
+            },
+            
+            async checkAPIInitialized() {
+                if (!this.gemini) {
+                    try {
+                        await this.initGemini();
+                    } catch (error) {
+                        throw new Error("API não inicializada após várias tentativas");
+                    }
+                }
+                return true;
             },
             
             updateUI() {
@@ -666,6 +708,9 @@
                         welcomeMessage.remove();
                     }
                     
+                    // Verifica se a API está inicializada
+                    await this.checkAPIInitialized();
+                    
                     // Verifica o tipo de conteúdo a ser gerado
                     if (message.toLowerCase().includes("gerar imagem") || 
                         message.toLowerCase().includes("generate image")) {
@@ -696,9 +741,7 @@
             
             async generateText(prompt) {
                 try {
-                    if (!this.gemini) {
-                        throw new Error("API do Gemini não inicializada");
-                    }
+                    await this.checkAPIInitialized();
                     
                     const response = await this.gemini.models.generateContent({
                         model: this.config.textModel,
@@ -729,9 +772,7 @@
             
             async generateImage(prompt) {
                 try {
-                    if (!this.gemini) {
-                        throw new Error("API do Gemini não inicializada");
-                    }
+                    await this.checkAPIInitialized();
                     
                     // Limpa o prompt removendo comandos desnecessários
                     const cleanPrompt = prompt.replace(/gerar imagem|generate image/gi, '').trim();
@@ -770,9 +811,7 @@
             
             async generateVideo(prompt) {
                 try {
-                    if (!this.gemini) {
-                        throw new Error("API do Gemini não inicializada");
-                    }
+                    await this.checkAPIInitialized();
                     
                     // Limpa o prompt removendo comandos desnecessários
                     const cleanPrompt = prompt.replace(/gerar vídeo|generate video/gi, '').trim();
@@ -814,9 +853,7 @@
             
             async generateVoice(prompt) {
                 try {
-                    if (!this.gemini) {
-                        throw new Error("API do Gemini não inicializada");
-                    }
+                    await this.checkAPIInitialized();
                     
                     // Limpa o prompt removendo comandos desnecessários
                     const cleanPrompt = prompt.replace(/gerar voz|generate voice|converta em voz/gi, '').trim();
@@ -877,9 +914,7 @@
             
             async generateMusic(prompt) {
                 try {
-                    if (!this.gemini) {
-                        throw new Error("API do Gemini não inicializada");
-                    }
+                    await this.checkAPIInitialized();
                     
                     // Limpa o prompt removendo comandos desnecessários
                     const cleanPrompt = prompt.replace(/gerar música|generate music/gi, '').trim();
@@ -1124,6 +1159,21 @@
                             copyBtn.innerHTML = `<i class="fas fa-copy"></i> Copiar`;
                         }, 2000);
                     };
+                    
+                    // Adiciona botão de tentar novamente para mensagens de erro
+                    if (type === "error") {
+                        const retryBtn = document.createElement("button");
+                        retryBtn.className = "action-btn";
+                        retryBtn.innerHTML = `<i class="fas fa-sync-alt"></i> Tentar novamente`;
+                        retryBtn.onclick = () => {
+                            this.initGemini().then(() => {
+                                if (this.elements.userInput.value.trim()) {
+                                    this.sendMessage();
+                                }
+                            });
+                        };
+                        actionsDiv.appendChild(retryBtn);
+                    }
                     
                     actionsDiv.appendChild(copyBtn);
                     messageDiv.appendChild(actionsDiv);
